@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>領収書の撮影と仕訳</title>
+<meta name="theme-color" content="#d32f2f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="領収書">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{color-scheme:light;--bg:#f4f3ef;--paper:#fff;--ink:#1a1a1a;--sub:#5c5c5c;--line:#dcdad3;--red:#d32f2f;--redbg:#fdecea;--blue:#1d5fb8;--green:#1f8a4c}
+*{box-sizing:border-box;min-width:0}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;overflow-x:clip;padding-bottom:env(safe-area-inset-bottom)}
+main{max-width:640px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 14px 60px}
+h1{font-size:22px;line-height:1.25;margin:4px 0 8px;font-weight:900}
+.nav{display:grid;grid-template-columns:repeat(3,1fr);margin:0 0 14px;border:2px solid var(--ink);border-radius:12px;overflow:hidden}
+.nav button{min-height:46px;border:0;background:var(--paper);color:var(--ink);font:inherit;font-weight:700}
+.nav button.on{background:var(--ink);color:#fff}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin:0 0 14px}
+.card.dis{opacity:.45;pointer-events:none}
+.card h2{font-size:18px;margin:0 0 10px;display:flex;align-items:center;gap:10px}
+.no{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;font-size:16px;flex:none}
+.btn{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:60px;padding:10px 14px;margin:0 0 10px;border:2px solid var(--ink);border-radius:14px;background:#fff;color:var(--ink);font:inherit;font-weight:800;font-size:18px;text-align:center;text-decoration:none;cursor:pointer}
+.btn small{display:block;font-weight:400;font-size:13.5px;color:var(--sub);margin-top:2px;line-height:1.4}
+.btn.red{background:var(--red);border-color:var(--red);color:#fff}.btn.red small{color:#fde7e7}
+.btn.lt{background:#f3f1ec;border-color:#d8d4cc}
+.btn.sm{min-height:46px;font-size:15px;font-weight:700}
+.btn:disabled{opacity:.45}
+.btn:active{transform:scale(.99)}
+.hide{display:none!important}
+input[type=text],input[type=url],select{width:100%;font:inherit;font-size:16px;padding:11px 12px;border:1px solid #bdbab2;border-radius:10px;background:#fff;color:var(--ink);margin:0 0 10px}
+input:focus,select:focus,button:focus-visible,a:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.lbl{font-size:14px;color:var(--sub);margin:0 0 6px}
+.tabs,.rng,.chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.tabs button{flex:1;min-height:44px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:22px;font:inherit;font-weight:700}
+.tabs button.on,.rng button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.rng button{min-height:40px;padding:4px 12px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:20px;font:inherit;font-size:14px;white-space:nowrap}
+.chips button{min-height:42px;padding:4px 12px;border:1px solid var(--red);background:var(--redbg);color:var(--ink);border-radius:21px;font:inherit;font-size:14.5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chips button b{color:var(--red);margin-right:4px}
+.sel{display:flex;align-items:center;gap:10px;padding:12px;border:2px solid var(--red);border-radius:12px;background:var(--redbg);flex-wrap:wrap}
+.sel .cd{color:var(--red);font-weight:900;font-size:20px}
+.sel .nm{font-weight:800;font-size:18px;line-height:1.3;flex:1}
+.sel .stl{width:100%;font-size:14px;color:var(--sub)}
+.sel button{min-height:40px;padding:4px 12px;border:1px solid var(--ink);background:#fff;border-radius:10px;font:inherit;font-size:14px}
+.drop{display:block;cursor:pointer;border:2px dashed #999;border-radius:14px;padding:14px;margin:0 0 10px;text-align:center;background:#f6f4ef}
+.drop b{display:block;font-size:16px}.drop small{color:var(--sub);font-size:13.5px}
+.drop.on{border-color:var(--red);background:var(--redbg)}
+.tray{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:4px 0 10px}
+.th{position:relative;aspect-ratio:3/4;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#eee;display:grid;place-items:center;font-size:12px;text-align:center}
+.th img{width:100%;height:100%;object-fit:cover}
+.th span{position:absolute;left:4px;bottom:4px;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:1px 6px;border-radius:6px}
+.th button{position:absolute;right:3px;top:3px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(0,0,0,.7);color:#fff;font-size:18px;line-height:1}
+.msg{font-size:15px;margin:0 0 10px;min-height:0}
+.msg.ng{color:var(--red);font-weight:700}
+.msg.ok{color:var(--green);font-weight:700}
+.bar{height:10px;background:#e6e3dc;border-radius:5px;overflow:hidden;margin:0 0 10px}.bar i{display:block;height:100%;width:0;background:var(--red);transition:width .2s}
+.ask{border:2px solid var(--blue);background:#eef4fc;border-radius:12px;padding:12px;margin:0 0 10px}
+.ask p{margin:0 0 8px;font-size:15px}
+.ask textarea{width:100%;min-height:90px;font:inherit;font-size:13px;border:1px solid #bcd3f0;border-radius:8px;padding:8px;margin:0 0 8px;background:#fff}
+.hp p,.hp li{font-size:15.5px;line-height:1.75}.hp ol,.hp ul{padding-left:1.4em;margin:6px 0 10px}
+.hp h3{font-size:16px;margin:16px 0 4px;padding-left:8px;border-left:5px solid var(--blue)}
+.hpt{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.hpt button{min-height:56px;border:2px solid var(--ink);border-radius:12px;background:#fff;font:inherit;font-weight:800;font-size:17px}
+.hpt button.on{background:var(--ink);color:#fff}
+.small{font-size:13.5px;color:var(--sub)}
+/* カメラ */
+.cam{position:fixed;inset:0;z-index:50;background:#000;color:#fff}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam .top{position:absolute;left:0;right:0;top:0;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:rgba(0,0,0,.6);text-align:center;font-weight:800;font-size:16px}
+.cam .bot{position:absolute;left:0;right:0;bottom:0;padding:10px 12px calc(14px + env(safe-area-inset-bottom));background:rgba(0,0,0,.6)}
+.cam .strip{display:flex;gap:6px;overflow-x:auto;margin:0 0 10px;min-height:0}
+.cam .strip div{position:relative;flex:none}
+.cam .strip img{height:64px;border-radius:4px;border:1px solid #fff;display:block}
+.cam .strip button{position:absolute;right:-4px;top:-4px;width:30px;height:30px;border-radius:50%;border:2px solid #fff;background:#c62828;color:#fff;font-size:15px;line-height:1}
+.cam .row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+.cam .shut{width:84px;height:84px;border-radius:50%;border:6px solid #fff;background:#e53935;color:#fff;font-weight:900;font-size:15px}
+.cam .shut.rec{border-radius:20px;background:#b71c1c}
+.cam .side{min-height:54px;border-radius:12px;border:0;background:#fff;color:#000;font:inherit;font-size:16px;font-weight:800;padding:0 10px}
+.cam .side.ghost{background:rgba(255,255,255,.18);color:#fff}
+.cam .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .15s}
+.cam .err{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;font-size:17px;line-height:1.7;background:#111}
+.big{position:fixed;inset:0;z-index:60;background:#000;overflow:auto;display:none}
+.big img{width:100%;display:block}
+.big button{position:sticky;top:0;width:100%;min-height:52px;border:0;background:#222;color:#fff;font:inherit;font-size:17px;font-weight:800}
+</style>
+</head>
+<body>
+<main>
+<h1>領収書の撮影と仕訳</h1>
+<div class="nav"><button type="button" id="nvMain" class="on">撮る・頼む</button><button type="button" id="nvHelp">使い方</button><button type="button" id="nvSet">設定</button></div>
+
+<!-- サインイン -->
+<section id="vLogin" class="card hide">
+  <h2>はじめに</h2>
+  <p>マイクロソフトのアカウントでサインインしてください。写真や動画は、このアカウントでOneDriveへ送ります。</p>
+  <button type="button" class="btn red" id="loginBtn">マイクロソフトでサインイン</button>
+  <div class="msg" id="loginMsg"></div>
+</section>
+
+<!-- メイン -->
+<div id="vMain" class="hide">
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>会社を選ぶ</h2>
+    <div id="pick">
+      <div id="recentW" class="hide"><div class="lbl">最近えらんだ会社</div><div class="chips" id="recent"></div></div>
+      <input type="text" id="q" placeholder="番号や名前で探す（例：1625、カレー）" autocomplete="off">
+      <div class="tabs" id="tabs"></div>
+      <div class="rng" id="rng"></div>
+      <select id="coSel" aria-label="会社"></select>
+      <div class="msg" id="m1"></div>
+      <button type="button" class="btn sm lt" id="addOpen">＋ 新規作成（一覧にない会社）</button>
+      <div id="add" class="hide">
+        <select id="aCat" aria-label="種類"></select>
+        <input type="text" id="aCode" placeholder="番号（例：1690）" inputmode="numeric">
+        <input type="text" id="aName" placeholder="会社名・名前">
+        <button type="button" class="btn sm red" id="addGo">この会社のフォルダーを作る</button>
+        <div class="msg" id="mAdd"></div>
+      </div>
+      <button type="button" class="btn sm lt" id="reload">一覧を最新にする</button>
+    </div>
+    <div id="chosen" class="sel hide">
+      <span class="cd" id="cCode"></span><span class="nm" id="cName"></span>
+      <button type="button" id="change">変える</button>
+      <span class="stl" id="coSt"></span>
+    </div>
+  </section>
+
+  <section class="card dis" id="s2">
+    <h2><span class="no">2</span>撮る・入れる</h2>
+    <button type="button" class="btn red" id="camPhoto">写真を続けて撮る<small>何枚でも。間違えた写真は×で消せます</small></button>
+    <button type="button" class="btn red" id="camVideo">動画で撮る<small>長くなったら一度止めて、続けて次を撮れます</small></button>
+    <label class="drop" id="drop"><b>写真・動画・PDFを選んで入れる</b><small>押して選ぶ。パソコンはここへドラッグしても入ります</small><input type="file" id="pickF" multiple accept="image/*,video/*,application/pdf" class="hide"></label>
+    <div class="msg" id="m2"></div>
+    <div class="tray" id="tray"></div>
+  </section>
+
+  <section class="card dis" id="s3">
+    <h2><span class="no">3</span>未処理に保存する</h2>
+    <button type="button" class="btn red" id="save1">未処理に入れるだけ<small>仕訳は後でする</small></button>
+    <button type="button" class="btn red" id="save2">未処理に入れて、続けて仕訳もする</button>
+    <div class="bar hide" id="bar"><i></i></div>
+    <div class="msg" id="m3"></div>
+    <div class="ask hide" id="ask3"></div>
+  </section>
+
+  <section class="card dis" id="s4">
+    <h2><span class="no">4</span>Claudeに頼む</h2>
+    <button type="button" class="btn" id="doJ">仕訳をする<small>未処理にある分をClaudeに頼みます</small></button>
+    <div class="ask hide" id="askJ"></div>
+    <button type="button" class="btn" id="doI">弥生へ取り込む<small>できたCSVを1本にまとめて取り込みます</small></button>
+    <div class="ask hide" id="askI"></div>
+    <button type="button" class="btn" id="doA">監査をする<small>この会社の監査をClaudeに頼みます</small></button>
+    <div class="ask hide" id="askA"></div>
+  </section>
+</div>
+
+<!-- 使い方 -->
+<section id="vHelp" class="card hp hide">
+  <div class="hpt"><button type="button" id="hpE" class="on">簡易版</button><button type="button" id="hpD">詳細版</button></div>
+  <div id="hpEasy">
+    <ol>
+      <li>「1 会社を選ぶ」で会社を選ぶ</li>
+      <li>「写真を続けて撮る」か「動画で撮る」で撮る</li>
+      <li>「未処理に入れるだけ」か「未処理に入れて、続けて仕訳もする」を押す</li>
+      <li>仕訳もするときは、出てきた「Claudeを開く」を押して、そのまま送信する</li>
+    </ol>
+    <p>撮った物は、このアプリから直接その会社の「未処理」に入ります。携帯の写真の中から探す必要はありません。</p>
+  </div>
+  <div id="hpDetail" class="hide">
+    <h3>ホーム画面に置く</h3>
+    <ul>
+      <li>iPhone：Safariでこのページを開き、下の共有ボタン（四角に上向きの矢印）→「ホーム画面に追加」</li>
+      <li>Android：Chromeでこのページを開き、右上の︙→「ホーム画面に追加」（または「アプリをインストール」）</li>
+    </ul>
+    <h3>はじめて使うとき</h3>
+    <ul>
+      <li>「マイクロソフトでサインイン」を押して、自分のアカウントでサインインします（最初の1回だけ）</li>
+      <li>事務所以外の人は「設定」で、共有してもらったフォルダーのリンクを貼り付けて「この場所を使う」を押します</li>
+      <li>カメラを使ってよいか聞かれたら「許可」を押します</li>
+    </ul>
+    <h3>写真を撮る</h3>
+    <ul>
+      <li>赤い丸を押すたびに1枚撮れます。音は鳴りません</li>
+      <li>下に並んだ写真の×で、その1枚を消せます</li>
+      <li>撮り終わったら「終わり」を押します。写真は1つのPDFにまとめて保存されます</li>
+    </ul>
+    <h3>動画で撮る</h3>
+    <ul>
+      <li>「録画」を押すと始まり、「止める」で1本できます</li>
+      <li>長くなりそうなときは一度止めて、もう一度「録画」で続きを撮れます</li>
+      <li>紙を1枚ずつゆっくりめくって、字がはっきり映るように撮ります</li>
+    </ul>
+    <h3>選んで入れる</h3>
+    <ul>
+      <li>前に撮った写真・動画・PDFを選んで入れられます。パソコンはドラッグでも入ります</li>
+    </ul>
+    <h3>保存とClaudeに頼む</h3>
+    <ul>
+      <li>保存中は画面を閉じないでください。途中で止まったら、もう一度押すと続きから送ります</li>
+      <li>「Claudeを開く」を押すと、頼む文が入った状態でClaudeが開きます。入っていないときは、入力欄を長押しして「貼り付け」を押します</li>
+      <li>「弥生へ取り込む」は、仕訳が終わってCSVができてから押します</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 設定 -->
+<section id="vSet" class="card hide">
+  <h2>設定</h2>
+  <p class="small" id="who"></p>
+  <div class="lbl">今の保存先</div>
+  <p id="destNow" style="margin:0 0 12px;font-weight:700"></p>
+  <div class="lbl">共有してもらったフォルダーを使う（リンクを貼り付ける）</div>
+  <input type="url" id="shareUrl" placeholder="https://… で始まる共有リンク">
+  <button type="button" class="btn sm red" id="useShare">この場所を使う</button>
+  <button type="button" class="btn sm lt" id="useDef">事務所の場所に戻す</button>
+  <div class="msg" id="mSet"></div>
+  <button type="button" class="btn sm lt" id="logout">サインアウト</button>
+</section>
+</main>
+
+<!-- カメラ画面 -->
+<div class="cam hide" id="cam">
+  <video id="cv" playsinline muted autoplay></video>
+  <div class="flash" id="flash"></div>
+  <div class="top" id="camTop"></div>
+  <div class="bot">
+    <div class="strip" id="strip"></div>
+    <div class="row">
+      <button type="button" class="side ghost" id="camLight" style="visibility:hidden">ライト</button>
+      <button type="button" class="shut" id="shut">撮る</button>
+      <button type="button" class="side" id="camDone">終わり</button>
+    </div>
+  </div>
+  <div class="err" id="camErr"></div>
+</div>
+<div class="big" id="big"><button type="button" id="bigClose">閉じる</button><img id="bigImg" alt=""></div>
+
+<script>
+{
+/* ===== 決まりごと ===== */
+const CLIENT_ID="__CLIENT_ID__";
+const AUTH="https://login.microsoftonline.com/common/oauth2/v2.0";
+const SCOPE="openid profile offline_access User.Read Files.ReadWrite.All";
+const GRAPH="https://graph.microsoft.com/v1.0";
+const DEF_PATH="＿弥生仕訳フォルダ";
+const DEF={id:"def",label:"＿弥生仕訳フォルダ（自分のOneDrive）",mode:"companies",roots:null};
+const PRE="＿弥生仕訳フォルダの CLAUDE.md を最初に読み、そこに書いてある順番で指示書（正本一覧・業務仕様・その会社の _instructions.txt など）を読んで、今の弥生仕訳の流れのとおりに進めて。CSVを作るときも指示書のとおりにして。";
+const VIDRULE="動画があるときは 指示書_動画の証憑読取.txt に従い、工程0の前に必ず ＿弥生仕訳フォルダ/_スキル・配布用/extract_video_frames.py を標準設定（0.1秒刻み）で実行し、作業フォルダは会社フォルダの外に作ること。仕訳は adopted のコマと _contact_sheet・_short_sheet だけを見て行い、1秒刻みなど独自の切り出しは禁止。";
+let FURI={};
+const GYO=["ア","カ","サ","タ","ナ","ハ","マ","ヤ","ラ","ワ"],GYOS=["アイウエオヴ","カキクケコガギグゲゴ","サシスセソザジズゼゾ","タチツテトダヂヅデド","ナニヌネノ","ハヒフヘホバビブベボパピプペポ","マミムメモ","ヤユヨ","ラリルレロ","ワヲン"];
+const SUBS=["未処理","処理済","出力","要保管書類"];
+
+/* ===== 小さな道具 ===== */
+const $=s=>document.querySelector(s);
+const show=(s,on)=>$(s).classList.toggle("hide",!on);
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sleep=n=>new Promise(r=>setTimeout(r,n));
+const mb=n=>(n/1048576).toFixed(1)+"MB";
+const pad=n=>String(n).padStart(2,"0");
+const safe=s=>String(s).replace(/["*:<>?\/\\|#%]/g,"_").trim();
+const norm=s=>String(s).normalize("NFKC").toLowerCase().replace(/[\s（）()㈱㈲・\.]/g,"").replace(/株式会社|有限会社|合同会社/g,"");
+const kana=s=>String(s||"").normalize("NFKC").replace(/[ぁ-ゖ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)+96));
+const msg=(id,t,cls)=>{const e=$(id);e.textContent=t||"";e.className="msg"+(cls?" "+cls:"")};
+const stampNow=()=>{const d=new Date();return`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`};
+
+/* ===== サインイン（PKCE） ===== */
+const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const rnd=n=>b64u(crypto.getRandomValues(new Uint8Array(n)));
+const REDIR=location.origin+location.pathname;
+let tok=ls.get("tok",null);
+async function login(){
+  const v=rnd(48),stt=rnd(16),ch=b64u(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)));
+  ls.set("pkce",{v,stt});
+  const p=new URLSearchParams({client_id:CLIENT_ID,response_type:"code",redirect_uri:REDIR,scope:SCOPE,state:stt,code_challenge:ch,code_challenge_method:"S256",prompt:"select_account"});
+  location.href=AUTH+"/authorize?"+p;
+}
+async function tokenReq(body){
+  const r=await fetch(AUTH+"/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({client_id:CLIENT_ID,scope:SCOPE,...body})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.access_token)throw new Error(j.error_description||j.error||("サインインできませんでした（"+r.status+"）"));
+  tok={a:j.access_token,r:j.refresh_token||(tok&&tok.r),e:Date.now()+(j.expires_in||3600)*1000};ls.set("tok",tok);return tok;
+}
+async function handleRedirect(){
+  const u=new URL(location.href),code=u.searchParams.get("code"),err=u.searchParams.get("error");
+  if(!code&&!err)return;
+  history.replaceState(null,"",REDIR);
+  if(err)throw new Error(u.searchParams.get("error_description")||err);
+  const p=ls.get("pkce",null);ls.del("pkce");
+  if(!p||p.stt!==u.searchParams.get("state"))throw new Error("サインインの途中で情報が合いませんでした。もう一度押してください");
+  await tokenReq({grant_type:"authorization_code",code,redirect_uri:REDIR,code_verifier:p.v});
+}
+let refreshing=null;
+async function access(force){
+  if(!tok)throw Object.assign(new Error("サインインしてください"),{login:true});
+  if(!force&&tok.e>Date.now()+90000)return tok.a;
+  if(!tok.r)throw Object.assign(new Error("もう一度サインインしてください"),{login:true});
+  if(!refreshing)refreshing=tokenReq({grant_type:"refresh_token",refresh_token:tok.r}).finally(()=>{refreshing=null});
+  try{return(await refreshing).a}catch(e){tok=null;ls.del("tok");throw Object.assign(new Error("もう一度サインインしてください"),{login:true})}
+}
+
+/* ===== OneDrive（Microsoft Graph） ===== */
+async function g(path,opt={},raw){
+  let last;
+  for(let t=0;t<4;t++){
+    const a=await access(t>0&&last&&last.status===401);
+    let r;
+    try{r=await fetch(path.startsWith("http")?path:GRAPH+path,{...opt,headers:{Authorization:"Bearer "+a,...(opt.json?{"Content-Type":"application/json"}:{}),...(opt.headers||{})},body:opt.json?JSON.stringify(opt.json):opt.body})}
+    catch(e){last={status:0,message:"通信できませんでした"};await sleep(1500*(t+1));continue}
+    if(r.ok)return raw?r:(r.status===204?null:r.json());
+    const j=await r.json().catch(()=>({}));
+    last={status:r.status,message:(j.error&&j.error.message)||("エラー "+r.status)};
+    if(r.status===401||r.status===429||r.status>=500){const ra=+r.headers.get("Retry-After")||0;await sleep(ra?ra*1000:1500*(t+1));continue}
+    break;
+  }
+  throw Object.assign(new Error(last.message),{status:last.status});
+}
+const enc=s=>encodeURIComponent(s);
+async function kids(drive,id){
+  let url=`/drives/${drive}/items/${id}/children?$select=id,name,folder,file,size,webUrl&$top=999`,out=[];
+  while(url){const j=await g(url);out=out.concat(j.value||[]);url=j["@odata.nextLink"]||null}
+  return out;
+}
+async function mkdir(drive,pid,name){
+  try{return await g(`/drives/${drive}/items/${pid}/children`,{method:"POST",json:{name,folder:{},"@microsoft.graph.conflictBehavior":"fail"}})}
+  catch(e){if(e.status===409)return await g(`/drives/${drive}/items/${pid}:/${enc(name)}`);throw e}
+}
+const CH=320*1024*32; // 10MB ずつ
+async function upload(drive,pid,name,blob,prog){
+  if(blob.size<=4*1024*1024){
+    const r=await g(`/drives/${drive}/items/${pid}:/${enc(name)}:/content?@microsoft.graph.conflictBehavior=rename`,{method:"PUT",body:blob,headers:{"Content-Type":blob.type||"application/octet-stream"}});
+    prog&&prog(1);return r;
+  }
+  const s=await g(`/drives/${drive}/items/${pid}:/${enc(name)}:/createUploadSession`,{method:"POST",json:{item:{"@microsoft.graph.conflictBehavior":"rename"}}});
+  const next=async()=>{try{const q=await (await fetch(s.uploadUrl)).json();const nx=q.nextExpectedRanges&&q.nextExpectedRanges[0];return nx!=null?+String(nx).split("-")[0]:null}catch(e){return null}};
+  let pos=0,fails=0;
+  while(true){
+    const end=Math.min(pos+CH,blob.size);
+    try{
+      const r=await fetch(s.uploadUrl,{method:"PUT",headers:{"Content-Range":`bytes ${pos}-${end-1}/${blob.size}`},body:blob.slice(pos,end)});
+      if(r.status===200||r.status===201){prog&&prog(1);return await r.json().catch(()=>({}))}
+      if(r.status===202){fails=0;pos=end;prog&&prog(pos/blob.size);continue}
+      throw new Error("status "+r.status);
+    }catch(e){
+      if(++fails>6)throw new Error("電波が悪く、送れませんでした。電波の良いところでもう一度押してください");
+      await sleep(2000*fails);const n=await next();if(n!=null)pos=n;
+    }
+  }
+}
+async function resolveShare(url){
+  const id="u!"+btoa(unescape(encodeURIComponent(url.trim()))).replace(/=+$/,"").replace(/\//g,"_").replace(/\+/g,"-");
+  return await g(`/shares/${id}/driveItem?$select=id,name,folder,parentReference,webUrl`);
+}
+
+/* ===== 状態 ===== */
+let dest=ls.get("dest",null);if(!dest||dest.id==="def")dest={...DEF};let cos=[],cat=ls.get("cat","ネパール"),rg=0,sel=null,items=[],busy=false,stMap={};
+
+/* ===== 会社の一覧 ===== */
+const furiOf=c=>FURI[c.code]||FURI[String(parseInt(c.code,10))]||"";
+function gyoOf(c){const f=kana(furiOf(c)||c.name).replace(/^[\s（(㈱㈲]+/,"");const ch=f[0]||"";const i=GYOS.findIndex(x=>x.includes(ch));return i<0?-1:i}
+const byCode=(a,b)=>(parseInt(a.code,10)||99999)-(parseInt(b.code,10)||99999)||a.name.localeCompare(b.name,"ja");
+function toCo(root,e){const m=e.name.match(/^(\d+)[\s　]*(.*)$/);return{cat:root.k,root:root.id,drive:dest.drive,id:e.id,folder:e.name,code:m?m[1]:"",name:m?(m[2]||e.name):e.name}}
+async function resolveDef(){
+  if(dest.id!=="def"||dest.roots)return;
+  const it=await g(`/me/drive/root:/${enc(DEF_PATH)}?$select=id,parentReference`);
+  const drive=it.parentReference.driveId,fd=(await kids(drive,it.id)).filter(e=>e.folder);
+  dest={...DEF,drive,root:it.id,roots:["法人","個人","ネパール"].map(k=>fd.find(e=>e.name===k)).filter(Boolean).map(e=>({k:e.name,id:e.id}))};
+  try{const f=fd.find(e=>e.name==="_アプリ設定");if(f){const r=await g(`/drives/${drive}/items/${f.id}:/furigana.json:/content`,{},true);FURI=await r.json()}}catch(e){}
+}
+async function loadCos(){
+  msg("#m1","会社の一覧を読み込んでいます…");
+  await resolveDef();
+  if(dest.mode==="direct"){cos=[{cat:"",root:dest.id,drive:dest.drive,id:dest.id,folder:dest.label,code:"",name:dest.label,direct:true}];ls.set("cos:"+dest.id,cos);renderList();msg("#m1","");choose(cos[0]);return}
+  const res=[];
+  for(const r of dest.roots){(await kids(dest.drive,r.id)).filter(e=>e.folder&&!/^[_＿]/.test(e.name)&&!SUBS.includes(e.name)).forEach(e=>res.push(toCo(r,e)))}
+  cos=res;ls.set("cos:"+dest.id,cos);renderList();msg("#m1",`${cos.length}社を読み込みました`);
+}
+function blocks(l){
+  const withC=l.filter(c=>/^\d+$/.test(c.code)).sort(byCode),noC=l.filter(c=>!/^\d+$/.test(c.code)).sort(byCode),bl=[];
+  if(cat==="ネパール"){const m=new Map();withC.forEach(c=>{const s=Math.floor(parseInt(c.code,10)/20)*20;if(!m.has(s))m.set(s,{label:`${String(s).padStart(4,"0")}〜${String(s+19).padStart(4,"0")}`,items:[]});m.get(s).items.push(c)});bl.push(...m.values())}
+  else if(cat==="個人"){const m=new Map();[...withC,...noC].forEach(c=>{const x=gyoOf(c),k=x<0?99:x;if(!m.has(k))m.set(k,{label:k===99?"その他":`${GYO[k]}行`,items:[]});m.get(k).items.push(c)});return[...m.entries()].sort((a,b)=>a[0]-b[0]).map(e=>{e[1].items.sort((a,b)=>kana(furiOf(a)||a.name).localeCompare(kana(furiOf(b)||b.name),"ja"));return e[1]})}
+  else if(cat==="法人"){const m=new Map();withC.forEach(c=>{const n=parseInt(c.code,10),mo=c.code.length>=5?Math.floor(n/100)%100:Math.floor(n/100),k=mo>=1&&mo<=12?mo:99;if(!m.has(k))m.set(k,{label:k===99?"その他":`${k}月決算`,items:[]});m.get(k).items.push(c)});bl.push(...[...m.entries()].sort((a,b)=>a[0]-b[0]).map(e=>e[1]))}
+  else{for(let i=0;i<withC.length;i+=20){const x=withC.slice(i,i+20);bl.push({label:x.length>1?`${x[0].code}〜${x[x.length-1].code}`:x[0].code,items:x})}}
+  if(noC.length)bl.push({label:"番号なし",items:noC});return bl;
+}
+function renderList(){
+  const ks=dest.roots&&dest.roots.length>1?dest.roots.map(r=>r.k):[];
+  if(ks.length&&!ks.includes(cat))cat=ks.includes("ネパール")?"ネパール":ks[0];if(!ks.length)cat="すべて";
+  const q=norm($("#q").value),rec=ls.get("recent:"+dest.id,[]).map(id=>cos.find(c=>c.id===id)).filter(Boolean).slice(0,6);
+  $("#recent").innerHTML=rec.map(c=>`<button type="button" data-id="${esc(c.id)}"><b>${esc(c.code)}</b>${esc(c.name)}</button>`).join("");show("#recentW",rec.length>0&&!q);
+  let opts,head;
+  if(q){opts=cos.filter(c=>norm(c.code).includes(q)||norm(c.name).includes(q)||norm(c.folder).includes(q)||(furiOf(c)&&norm(kana(furiOf(c))).includes(norm(kana(q))))).sort(byCode);head=opts.length?`見つかった会社（${opts.length}社）から選ぶ`:"見つかりません。「＋ 新規作成」で作れます";show("#tabs",false);show("#rng",false)}
+  else{
+    $("#tabs").innerHTML=ks.map(k=>`<button type="button" class="${k===cat?"on":""}" data-k="${esc(k)}">${esc(k)}</button>`).join("");show("#tabs",ks.length>0);
+    const bl=blocks(cos.filter(c=>cat==="すべて"||c.cat===cat));if(rg>=bl.length)rg=0;
+    $("#rng").innerHTML=bl.map((b,i)=>`<button type="button" class="${i===rg?"on":""}" data-r="${i}">${esc(b.label)}</button>`).join("");show("#rng",bl.length>1);
+    opts=bl.length?bl[rg].items:[];head=cos.length?`会社を選んでください（${opts.length}社）`:"一覧がありません。「一覧を最新にする」を押してください";
+  }
+  $("#coSel").innerHTML=`<option value="">${esc(head)}</option>`+opts.slice(0,300).map(c=>`<option value="${esc(c.id)}">${esc(c.code?c.code+"　":"")}${esc(c.name)}${q&&ks.length?"（"+esc(c.cat)+"）":""}</option>`).join("");
+  $("#aCat").innerHTML=(dest.roots||[]).map(r=>`<option>${esc(r.k)}</option>`).join("");if(ks.includes(cat))$("#aCat").value=cat;
+}
+function stLine(c){const s=stMap[c.id];if(!s)return"状態を確認しています…";return[s.pend.length?`未処理 ${s.pend.length}件`:"未処理なし",s.csv.length?`未取込CSV ${s.csv.length}本`:"未取込CSVなし"].join("・")}
+const isPend=e=>e.file?!/^[_＿]/.test(e.name)&&!/^ここに/.test(e.name):(!/^[_＿]/.test(e.name)||/^_分割_/.test(e.name));
+const isCsv=e=>e.file&&/\.csv$/i.test(e.name)&&!/_済\.csv$/i.test(e.name)&&!/^[_＿]/.test(e.name)&&!/^一覧_/.test(e.name);
+async function scan(c){
+  const l=await kids(c.drive,c.id),u=l.find(e=>e.folder&&e.name==="未処理"),o=l.find(e=>e.folder&&e.name==="出力");
+  if(u){c.unp=u.id;c.unpUrl=u.webUrl}
+  const s={pend:[],csv:[],noIns:!l.some(e=>e.name==="_instructions.txt")};
+  if(u)s.pend=(await kids(c.drive,u.id)).filter(isPend).map(e=>e.name);
+  if(o)s.csv=(await kids(c.drive,o.id)).filter(isCsv).map(e=>e.name);
+  stMap[c.id]=s;return s;
+}
+async function choose(c){
+  if(!c)return;sel=c;const k="recent:"+dest.id,rec=ls.get(k,[]).filter(x=>x!==c.id);rec.unshift(c.id);ls.set(k,rec.slice(0,8));
+  $("#cCode").textContent=c.code||c.cat||"";$("#cName").textContent=c.name;show("#pick",false);show("#chosen",true);
+  ["#s2","#s3","#s4"].forEach(s=>$(s).classList.remove("dis"));["#ask3","#askJ","#askI","#askA"].forEach(s=>show(s,false));msg("#m3","");upd();
+  $("#coSt").textContent=stLine(c);
+  try{await scan(c);if(sel===c)$("#coSt").textContent=stLine(c)}catch(e){if(sel===c)$("#coSt").textContent="状態を確認できませんでした（"+e.message+"）"}
+}
+async function addCo(){
+  const k=$("#aCat").value,code=$("#aCode").value.normalize("NFKC").trim(),name=$("#aName").value.trim();
+  if(!name){$("#aName").focus();return}
+  const ex=cos.find(c=>code&&c.code===code&&c.cat===k);if(ex){show("#add",false);choose(ex);return}
+  const r=(dest.roots||[]).find(x=>x.k===k)||dest.roots[0],folder=safe((code?code+" ":"")+name);
+  try{msg("#mAdd","フォルダーを作っています…");const f=await mkdir(dest.drive,r.id,folder);
+    const c=toCo(r,{id:f.id,name:folder});for(const s of SUBS){const x=await mkdir(dest.drive,f.id,s);if(s==="未処理")c.unp=x.id}
+    cos.push(c);ls.set("cos:"+dest.id,cos);show("#add",false);msg("#mAdd","");msg("#m1",`「${folder}」と中のフォルダーを作りました`,"ok");choose(c);
+  }catch(e){msg("#mAdd","作れませんでした（"+e.message+"）","ng")}
+}
+
+/* ===== 撮った物 ===== */
+function upd(){
+  const n=items.length,ph=items.filter(i=>i.kind==="photo").length,vd=items.filter(i=>i.kind==="video").length,fl=n-ph-vd;
+  $("#save1").disabled=$("#save2").disabled=busy||!sel||!n;
+  if(!busy)msg("#m2",n?`保存待ち：${[ph?`写真${ph}枚`:"",vd?`動画${vd}本`:"",fl?`ファイル${fl}件`:""].filter(Boolean).join("・")}。終わったら「3」で保存してください`:"");
+}
+function renderTray(){
+  let p=0;
+  $("#tray").innerHTML=items.map((it,i)=>`<div class="th">${it.url?`<img src="${it.url}" alt="" data-v="${i}">`:`<div>${it.kind==="video"?"動画<br>"+mb(it.blob.size):esc(it.name)}</div>`}${it.kind==="photo"?`<span>${++p}</span>`:it.kind==="video"?`<span>動画</span>`:""}<button type="button" data-x="${i}" aria-label="消す">×</button></div>`).join("");
+  upd();
+}
+async function bmp(f){try{return await createImageBitmap(f)}catch(e){return await new Promise((ok,ng)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>ng(new Error("画像を開けません"));i.src=URL.createObjectURL(f)})}}
+async function toJpeg(src,max,q){
+  const w0=src.videoWidth||src.naturalWidth||src.width,h0=src.videoHeight||src.naturalHeight||src.height,sc=Math.min(1,max/Math.max(w0,h0)),w=Math.round(w0*sc),h=Math.round(h0*sc);
+  const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(src,0,0,w,h);
+  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",q));if(!blob)throw new Error("画像を作れませんでした");
+  return{blob,w,h,url:URL.createObjectURL(blob)};
+}
+async function addFiles(fs){
+  fs=[...fs].filter(f=>f&&f.size>0);if(!fs.length)return;
+  if(!sel){msg("#m1","先に会社を選んでください","ng");$("#s1").scrollIntoView({behavior:"smooth"});return}
+  let ng=0;
+  for(const f of fs){
+    try{
+      if(f.type==="application/pdf"||/\.pdf$/i.test(f.name))items.push({kind:"file",blob:f,name:f.name||"資料.pdf"});
+      else if(/^video\//.test(f.type)||/\.(mp4|mov|webm|m4v|3gp)$/i.test(f.name))items.push({kind:"video",blob:f,name:f.name,ext:(f.name.match(/\.[A-Za-z0-9]{2,4}$/)||[".mp4"])[0].toLowerCase()});
+      else{const j=await toJpeg(await bmp(f),2600,.92);items.push({kind:"photo",...j})}
+    }catch(e){ng++}
+  }
+  renderTray();if(ng)msg("#m2",`${ng}件は読めませんでした`,"ng");
+}
+async function pdf(pages){
+  const te=new TextEncoder(),parts=[],offs=[];let len=0;
+  const push=x=>{const u=typeof x==="string"?te.encode(x):x;parts.push(u);len+=u.length},begin=i=>{offs[i]=len;push(`${i} 0 obj\n`)};
+  const n=pages.length;push("%PDF-1.4\n");
+  begin(1);push("<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+  begin(2);push(`<< /Type /Pages /Kids [${pages.map((_,i)=>`${3+i*3} 0 R`).join(" ")}] /Count ${n} >>\nendobj\n`);
+  for(let i=0;i<n;i++){
+    const p=pages[i],sc=842/Math.max(p.w,p.h),W=(p.w*sc).toFixed(2),H=(p.h*sc).toFixed(2),cs=`q ${W} 0 0 ${H} 0 0 cm /Im${i} Do Q`;
+    begin(3+i*3);push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /XObject << /Im${i} ${5+i*3} 0 R >> >> /Contents ${4+i*3} 0 R >>\nendobj\n`);
+    begin(4+i*3);push(`<< /Length ${cs.length} >>\nstream\n${cs}\nendstream\nendobj\n`);
+    const b=new Uint8Array(await p.blob.arrayBuffer());
+    begin(5+i*3);push(`<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${b.length} >>\nstream\n`);push(b);push("\nendstream\nendobj\n");
+  }
+  const tot=3+n*3,xr=len;let x=`xref\n0 ${tot}\n0000000000 65535 f \n`;for(let i=1;i<tot;i++)x+=String(offs[i]).padStart(10,"0")+" 00000 n \n";
+  push(x+`trailer\n<< /Size ${tot} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF\n`);
+  return new Blob(parts,{type:"application/pdf"});
+}
+
+/* ===== カメラ（アプリの中で撮る） ===== */
+let stream=null,camMode="photo",rec=null,recChunks=[],recT0=0,recTimer=null,light=false,camShots=[];
+const recMime=()=>{for(const m of["video/mp4;codecs=avc1","video/mp4","video/webm;codecs=vp9","video/webm"])if(window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(m))return m;return""};
+async function openCam(mode){
+  if(!sel){msg("#m1","先に会社を選んでください","ng");return}
+  camMode=mode;camShots=[];$("#strip").innerHTML="";show("#cam",true);$("#camErr").style.display="none";document.body.style.overflow="hidden";
+  $("#shut").textContent=mode==="photo"?"撮る":"録画";$("#shut").classList.remove("rec");
+  camTop();
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:mode==="photo"?3840:1920},height:{ideal:mode==="photo"?2160:1080}}});
+    $("#cv").srcObject=stream;await $("#cv").play();
+    const tr=stream.getVideoTracks()[0],cp=tr.getCapabilities?tr.getCapabilities():{};$("#camLight").style.visibility=cp.torch?"visible":"hidden";light=false;
+  }catch(e){
+    const er=$("#camErr");er.style.display="flex";
+    er.innerHTML=`カメラを使えませんでした。<br>カメラの許可を「許可」にしてから、もう一度押してください。<br><small>（${esc(e.name||"")}）</small><br><br><button type="button" class="side" id="camBack" style="min-width:160px">戻る</button>`;
+    $("#camBack").onclick=closeCam;
+  }
+}
+function camTop(){
+  if(camMode==="photo")$("#camTop").textContent=`領収書を写して赤い丸を押す（${camShots.length}枚）`;
+  else if(rec&&rec.state==="recording"){const s=Math.floor((Date.now()-recT0)/1000);$("#camTop").textContent=`録画中 ${Math.floor(s/60)}:${pad(s%60)}　紙をゆっくりめくってください`}
+  else $("#camTop").textContent=camShots.length?`${camShots.length}本撮りました。続けるときはもう一度「録画」`:"「録画」を押すと始まります";
+}
+function stripAdd(it){
+  const d=document.createElement("div");d.innerHTML=it.url?`<img src="${it.url}" alt="">`:`<div style="height:64px;width:64px;display:grid;place-items:center;border:1px solid #fff;border-radius:4px;font-size:12px">動画<br>${mb(it.blob.size)}</div>`;
+  const b=document.createElement("button");b.type="button";b.textContent="×";b.setAttribute("aria-label","消す");
+  b.onclick=()=>{camShots=camShots.filter(x=>x!==it);d.remove();camTop()};d.appendChild(b);$("#strip").prepend(d);
+}
+async function shutter(){
+  const v=$("#cv");if(!v.videoWidth)return;
+  if(camMode==="photo"){
+    const f=$("#flash");f.style.opacity=.8;setTimeout(()=>f.style.opacity=0,120);if(navigator.vibrate)navigator.vibrate(30);
+    try{const j=await toJpeg(v,4000,.9);const it={kind:"photo",...j};camShots.push(it);stripAdd(it);camTop()}catch(e){}
+    return;
+  }
+  if(rec&&rec.state==="recording"){rec.stop();return}
+  const mt=recMime();
+  try{rec=new MediaRecorder(stream,mt?{mimeType:mt,videoBitsPerSecond:8000000}:{videoBitsPerSecond:8000000})}catch(e){try{rec=new MediaRecorder(stream)}catch(x){alertCam("この機種では、アプリの中で録画できません。「写真・動画・PDFを選んで入れる」から、携帯のカメラで撮った動画を入れてください");return}}
+  recChunks=[];rec.ondataavailable=e=>{if(e.data&&e.data.size)recChunks.push(e.data)};
+  rec.onstop=()=>{clearInterval(recTimer);const type=(rec.mimeType||mt||"video/mp4").split(";")[0],blob=new Blob(recChunks,{type});
+    if(blob.size){const it={kind:"video",blob,name:"動画",ext:/webm/.test(type)?".webm":".mp4"};camShots.push(it);stripAdd(it)}
+    $("#shut").textContent="録画";$("#shut").classList.remove("rec");$("#camDone").disabled=false;camTop()};
+  rec.start(1000);recT0=Date.now();recTimer=setInterval(camTop,1000);$("#shut").textContent="止める";$("#shut").classList.add("rec");$("#camDone").disabled=true;camTop();
+}
+function alertCam(t){$("#camTop").textContent=t}
+function closeCam(){
+  try{if(rec&&rec.state==="recording")rec.stop()}catch(e){}
+  try{if(stream)stream.getTracks().forEach(t=>t.stop())}catch(e){}
+  stream=null;show("#cam",false);document.body.style.overflow="";
+}
+function camDone(){
+  if(rec&&rec.state==="recording")return;
+  items.push(...camShots);camShots=[];closeCam();renderTray();$("#s3").scrollIntoView({behavior:"smooth",block:"start"});
+}
+async function toggleLight(){try{light=!light;await stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:light}]});$("#camLight").textContent=light?"ライト消す":"ライト"}catch(e){}}
+
+/* ===== 保存 ===== */
+let wl=null;async function wake(on){try{if(on){if(navigator.wakeLock&&!wl)wl=await navigator.wakeLock.request("screen")}else if(wl){await wl.release();wl=null}}catch(e){}}
+let batch=null;
+async function unproc(c){
+  if(c.direct)return c.id;if(c.unp)return c.unp;
+  const l=await kids(c.drive,c.id),u=l.find(e=>e.folder&&e.name==="未処理");if(u)return c.unp=u.id;
+  return c.unp=(await mkdir(c.drive,c.id,"未処理")).id;
+}
+function bar(p){show("#bar",p!=null);if(p!=null)$("#bar i").style.width=Math.round(p*100)+"%"}
+async function save(thenJ){
+  if(busy||!sel||!items.length)return;busy=true;upd();show("#ask3",false);await wake(true);
+  const c=sel;if(!batch||batch.co!==c)batch={co:c,stamp:stampNow(),names:[],vi:0,pi:0};
+  const total=items.reduce((a,i)=>a+i.blob.size,0);let doneB=0,ok=true;
+  try{
+    const fid=await unproc(c);
+    const ph=items.filter(i=>i.kind==="photo");
+    if(ph.length){
+      if(!batch.pdfJob){batch.pi++;batch.pdfJob={nm:`${batch.stamp}_写真${batch.pi>1?"_"+batch.pi:""}.pdf`,blob:await pdf(ph),src:ph}}
+      const j=batch.pdfJob;msg("#m3",`写真${ph.length}枚を送っています…`);
+      await upload(c.drive,fid,j.nm,j.blob,p=>bar((doneB+p*ph.reduce((a,x)=>a+x.blob.size,0))/total));
+      doneB+=ph.reduce((a,x)=>a+x.blob.size,0);batch.names.push(j.nm);items=items.filter(x=>!j.src.includes(x));batch.pdfJob=null;renderTray();
+    }
+    for(const v of items.filter(i=>i.kind!=="photo")){
+      if(!v.nm)v.nm=v.kind==="video"?`${batch.stamp}_動画_${++batch.vi}${v.ext||".mp4"}`:`${batch.stamp}_${safe(v.name)}`;
+      msg("#m3",`送っています：${v.nm}（${mb(v.blob.size)}）`);
+      await upload(c.drive,fid,v.nm,v.blob,p=>bar((doneB+p*v.blob.size)/total));
+      doneB+=v.blob.size;batch.names.push(v.nm);items=items.filter(x=>x!==v);renderTray();
+    }
+  }catch(e){ok=false;if(e.login){msg("#m3","サインインが切れました。設定からサインインし直して、もう一度押してください","ng")}else msg("#m3","途中で止まりました（"+e.message+"）。送れた分は保存済みです。もう一度押すと続きから送ります","ng")}
+  busy=false;bar(null);await wake(false);upd();
+  if(ok){
+    const names=batch.names;batch=null;
+    msg("#m3",`保存しました：${names.join("、")}`,"ok");
+    try{await scan(c);if(sel===c)$("#coSt").textContent=stLine(c)}catch(e){}
+    if(thenJ)askBox("#ask3",textJ(c),"未処理に入れました。続けて仕訳を頼みます");
+  }
+}
+
+/* ===== Claudeに頼む ===== */
+const where=c=>dest.id==="def"?"":`（場所：${dest.label}${c.cat&&c.cat!=="すべて"?" ＞ "+c.cat:""} ＞ ${c.folder}）`;
+function textJ(c){
+  if(c.direct)return PRE+`\n「${dest.label}」の未処理に入れた分の弥生仕訳をして。`+VIDRULE;
+  const s=stMap[c.id];let t=PRE+`\n《${c.folder}》の未処理フォルダを処理して${where(c)}。`;
+  if(s&&s.noIns)t+="この会社には _instructions.txt がまだないので、先に作ってから処理すること。";
+  t+="\n未処理のほかに、この会社の領収書などがほかの場所に置かれていないかも探すこと。探す場所は、①この会社のフォルダーの中で未処理・処理済・出力以外の場所（会社フォルダーのすぐ下や要保管書類など）、②秘書フォルダー（OneDriveの ＿秘書ボックス。特に 01_受付 の中の、この会社の呼び名のフォルダー）、③OneDrive全体で、この会社の番号・名前・屋号が名前に入ったファイルのうち最近入ったもの。秘書ボックスの案件は秘書タスク台帳とLINE WORKS側の担当を確かめ、ほかで作業中の物には手を付けないこと。見つけた物は、処理済の物と重ならないか確かめたうえで一覧にして、仕訳に使うかどうかを私に聞くこと。使うと答えた物だけ未処理に移してから処理すること。";
+  return t+VIDRULE;
+}
+function textI(c){
+  const s=stMap[c.id],csv=s&&s.csv||[];
+  return PRE+"\n"+(csv.length?`《${c.folder}》の出力フォルダにある、まだ弥生に取り込んでいないCSV（${csv.join("、")}）を、同じ仕訳が重なっていないか確かめてから1本にまとめて弥生に取り込んで${where(c)}。`:`《${c.folder}》の出力フォルダにある、まだ弥生に取り込んでいないCSVを1本にまとめて弥生に取り込んで${where(c)}。`)+"取り込みが終わったら、元のCSVとまとめたCSVはそれぞれ「処理済」フォルダへ移し、拡張子の前に「_済」を付けて。";
+}
+function askBox(id,text,head){
+  const b=$(id);show(id,true);
+  b.innerHTML=`<p><b>${esc(head)}</b></p><p>下の「Claudeを開く」を押すとClaudeが開きます。頼む文が入っていたら、そのまま送信してください。入っていないときは、入力欄を長押しして「貼り付け」を押します。</p><a class="btn red" target="_blank" rel="noopener" href="https://claude.ai/new?q=${enc(text)}">Claudeを開く</a><textarea readonly>${esc(text)}</textarea>`;
+  b.querySelector("a").addEventListener("click",()=>{try{navigator.clipboard.writeText(text)}catch(e){}});
+  b.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function textA(c){return`＿監査用 の 00_現行正本一覧.md を最初に読み、そこで指定された監査の指示書（監査体制 Ver3.0 の統一規約・運用とデータ契約・audit-settings.json、共通監査基準、この会社の会社別設定など）をすべて読んでから、《${c.folder}》の監査をして${where(c)}。会社の特定、0次・一次・二次のどれか、新規か続きかは、指示書どおり監査進捗一覧・案件台帳・案件記録で判断すること。質問は指示書の決まった形でこのチャットに全部出すこと。私が答えたら、その都度回答を反映し、弥生の訂正が必要なものは指示書どおり訂正CSVを作って検証し、そのまま弥生に取り込んで訂正まで済ませること（別に頼み直さなくてよい）。取り込んだCSVは、この会社の「処理済」フォルダへ移し、拡張子の前に「_済」を付けること。`}
+async function doAsk(kind){
+  if(kind==="a"){if(sel)askBox("#askA",textA(sel),"この会社の監査を頼みます");return}
+  const c=sel;if(!c)return;const id=kind==="j"?"#askJ":"#askI";show(id,true);$(id).innerHTML="<p>未処理と出力を確認しています…</p>";
+  try{await scan(c);$("#coSt").textContent=stLine(c)}catch(e){}
+  const s=stMap[c.id];
+  if(kind==="j")askBox(id,textJ(c),s&&!s.pend.length?"未処理には何もありませんが、ほかの場所も探すので頼めます":`未処理 ${s?s.pend.length:"?"}件 の仕訳を頼みます`);
+  else askBox(id,textI(c),s&&!s.csv.length?"まだ取り込んでいないCSVは見つかりませんでした。仕訳が終わってから押してください":`CSV ${s?s.csv.length:"?"}本 の取り込みを頼みます`);
+}
+
+/* ===== 設定 ===== */
+async function useShare(){
+  const u=$("#shareUrl").value.trim();if(!/^https:\/\//.test(u)){msg("#mSet","https:// で始まる共有リンクを貼り付けてください","ng");return}
+  try{
+    msg("#mSet","リンクを確かめています…");const it=await resolveShare(u);if(!it.folder)throw new Error("フォルダーのリンクではありません");
+    const drive=it.parentReference.driveId,l=await kids(drive,it.id),fd=l.filter(e=>e.folder);
+    let d;
+    if(fd.some(e=>e.name==="未処理"))d={drive,id:it.id,label:it.name,mode:"direct"};
+    else{const roots=["法人","個人","ネパール"].map(k=>fd.find(e=>e.name===k)).filter(Boolean).map(e=>({k:e.name,id:e.id}));d={drive,id:it.id,label:it.name,mode:"companies",roots:roots.length?roots:[{k:"すべて",id:it.id}]}}
+    dest=d;ls.set("dest",d);sel=null;cos=[];resetPick();renderDest();msg("#mSet",`「${it.name}」を使います`,"ok");await loadCos();
+  }catch(e){msg("#mSet","使えませんでした（"+e.message+"）。リンクが正しいか、共有の相手に自分が入っているか確かめてください","ng")}
+}
+function renderDest(){$("#destNow").textContent=dest.label+(dest.mode==="direct"?"（この中の未処理へ入れます）":"")}
+function resetPick(){sel=null;show("#pick",true);show("#chosen",false);["#s2","#s3","#s4"].forEach(s=>$(s).classList.add("dis"));items=[];renderTray()}
+
+/* ===== 画面の切り替え ===== */
+function view(w){
+  const signed=!!tok;
+  show("#vLogin",w==="m"&&!signed);show("#vMain",w==="m"&&signed);show("#vHelp",w==="h");show("#vSet",w==="t");
+  $("#nvMain").classList.toggle("on",w==="m");$("#nvHelp").classList.toggle("on",w==="h");$("#nvSet").classList.toggle("on",w==="t");window.scrollTo({top:0});
+}
+$("#nvMain").onclick=()=>view("m");$("#nvHelp").onclick=()=>view("h");$("#nvSet").onclick=()=>view("t");
+$("#hpE").onclick=()=>{show("#hpEasy",true);show("#hpDetail",false);$("#hpE").classList.add("on");$("#hpD").classList.remove("on")};
+$("#hpD").onclick=()=>{show("#hpEasy",false);show("#hpDetail",true);$("#hpD").classList.add("on");$("#hpE").classList.remove("on")};
+$("#loginBtn").onclick=()=>{if(CLIENT_ID.startsWith("__")){msg("#loginMsg","まだマイクロソフトの登録ができていません","ng");return}login()};
+$("#logout").onclick=()=>{tok=null;ls.del("tok");view("m")};
+$("#useShare").onclick=useShare;
+$("#useDef").onclick=async()=>{dest={...DEF};ls.del("dest");resetPick();renderDest();msg("#mSet","事務所の場所に戻しました","ok");try{await loadCos()}catch(e){msg("#mSet","読み込めませんでした（"+e.message+"）","ng")}};
+$("#q").addEventListener("input",()=>{rg=0;renderList()});
+$("#tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;cat=b.dataset.k;ls.set("cat",cat);rg=0;renderList()};
+$("#rng").onclick=e=>{const b=e.target.closest("button");if(!b)return;rg=+b.dataset.r;renderList();$("#coSel").focus()};
+$("#recent").onclick=e=>{const b=e.target.closest("button");if(b)choose(cos.find(c=>c.id===b.dataset.id))};
+$("#coSel").onchange=()=>{const c=cos.find(x=>x.id===$("#coSel").value);if(c)choose(c)};
+$("#change").onclick=()=>{show("#pick",true);show("#chosen",false);$("#q").value="";renderList()};
+$("#addOpen").onclick=()=>{show("#add",$("#add").classList.contains("hide"));$("#aName").value=$("#q").value&&!/^\d+$/.test($("#q").value.trim())?$("#q").value.trim():"";$("#aCode").value=/^\d+$/.test($("#q").value.trim())?$("#q").value.trim():""};
+$("#addGo").onclick=addCo;
+$("#reload").onclick=async()=>{try{await loadCos()}catch(e){msg("#m1","読み込めませんでした（"+e.message+"）","ng")}};
+$("#camPhoto").onclick=()=>openCam("photo");$("#camVideo").onclick=()=>openCam("video");
+$("#shut").onclick=shutter;$("#camDone").onclick=camDone;$("#camLight").onclick=toggleLight;
+$("#pickF").onchange=e=>{addFiles(e.target.files);e.target.value=""};
+$("#drop").onclick=e=>{if(e.target.id!=="pickF")$("#pickF").click();e.preventDefault()};
+["dragenter","dragover"].forEach(t=>document.addEventListener(t,e=>{e.preventDefault();$("#drop").classList.add("on")}));
+["dragleave","drop"].forEach(t=>document.addEventListener(t,e=>{e.preventDefault();if(t==="drop"||!e.relatedTarget)$("#drop").classList.remove("on")}));
+document.addEventListener("drop",e=>{if(e.dataTransfer&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files)});
+$("#tray").onclick=e=>{const x=e.target.closest("button[data-x]");if(x){const it=items[+x.dataset.x];items.splice(+x.dataset.x,1);if(batch&&batch.pdfJob&&batch.pdfJob.src.includes(it))batch.pdfJob=null;renderTray();return}const v=e.target.closest("img[data-v]");if(v){$("#bigImg").src=v.src;$("#big").style.display="block"}};
+$("#bigClose").onclick=()=>{$("#big").style.display="none"};
+$("#save1").onclick=()=>save(false);$("#save2").onclick=()=>save(true);
+$("#doJ").onclick=()=>doAsk("j");$("#doA").onclick=()=>doAsk("a");$("#doI").onclick=()=>doAsk("i");
+window.addEventListener("beforeunload",e=>{if(busy||items.length){e.preventDefault();e.returnValue=""}});
+
+/* ===== はじめ ===== */
+(async()=>{
+  try{await handleRedirect()}catch(e){msg("#loginMsg",e.message,"ng")}
+  renderDest();view("m");if(!tok)return;
+  try{const me=await g("/me?$select=displayName,userPrincipalName");$("#who").textContent="サインイン中："+(me.userPrincipalName||me.displayName||"")}catch(e){if(e.login){view("m");return}}
+  cos=ls.get("cos:"+dest.id,[]);renderList();
+  try{await loadCos()}catch(e){if(e.login){view("m");return}msg("#m1",dest.id==="def"?"自分のOneDriveに ＿弥生仕訳フォルダ が見つかりませんでした。事務所以外の人は「設定」で共有フォルダーのリンクを貼り付けてください":"読み込めませんでした（"+e.message+"）","ng")}
+})();
+}
+</script>
+</body>
+</html>
