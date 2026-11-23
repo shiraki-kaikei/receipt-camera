@@ -148,6 +148,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:3px solid 
     <button type="button" class="btn red" id="save1">未処理に入れるだけ<small>仕訳は後でする</small></button>
     <button type="button" class="btn red" id="save2">未処理に入れて、続けて仕訳もする</button>
     <div class="bar hide" id="bar"><i></i></div>
+    <div class="msg" id="eta"></div>
     <div class="msg" id="m3"></div>
     <div class="ask hide" id="ask3"></div>
   </section>
@@ -335,7 +336,7 @@ async function mkdir(drive,pid,name){
   try{return await g(`/drives/${drive}/items/${pid}/children`,{method:"POST",json:{name,folder:{},"@microsoft.graph.conflictBehavior":"fail"}})}
   catch(e){if(e.status===409)return await g(`/drives/${drive}/items/${pid}:/${enc(name)}`);throw e}
 }
-const CH=320*1024*32; // 10MB ずつ
+const CH=320*1024*16; // 5MB ずつ
 async function upload(drive,pid,name,blob,prog){
   if(blob.size<=4*1024*1024){
     const r=await g(`/drives/${drive}/items/${pid}:/${enc(name)}:/content?@microsoft.graph.conflictBehavior=rename`,{method:"PUT",body:blob,headers:{"Content-Type":blob.type||"application/octet-stream"}});
@@ -551,9 +552,13 @@ async function unproc(c){
   const l=await kids(c.drive,c.id),u=l.find(e=>e.folder&&e.name==="未処理");if(u)return c.unp=u.id;
   return c.unp=(await mkdir(c.drive,c.id,"未処理")).id;
 }
-function bar(p){show("#bar",p!=null);if(p!=null)$("#bar i").style.width=Math.round(p*100)+"%"}
+let barT0=0;
+const dur=r=>r>=60?`${Math.floor(r/60)}分${r%60?r%60+"秒":""}`:`${r}秒`;
+function bar(p){show("#bar",p!=null);const m=$("#eta");if(p==null){barT0=0;m.textContent="";return}
+  $("#bar i").style.width=Math.round(p*100)+"%";if(!barT0)barT0=Date.now();const el=(Date.now()-barT0)/1000;
+  m.textContent=`送っています ${Math.round(p*100)}%　`+(p>0.02&&el>2?`あと約${dur(Math.max(1,Math.round(el*(1-p)/p)))}`:"残り時間を計算しています…")}
 async function save(thenJ){
-  if(busy||!sel||!items.length)return;busy=true;upd();show("#ask3",false);await wake(true);
+  if(busy||!sel||!items.length)return;busy=true;upd();show("#ask3",false);await wake(true);bar(0);
   const c=sel;if(!batch||batch.co!==c)batch={co:c,stamp:stampNow(),names:[],vi:0,pi:0};
   const total=items.reduce((a,i)=>a+i.blob.size,0);let doneB=0,ok=true;
   try{
