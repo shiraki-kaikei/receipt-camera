@@ -50,6 +50,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:3px solid 
 .drop{display:block;cursor:pointer;border:2px dashed #999;border-radius:14px;padding:14px;margin:0 0 10px;text-align:center;background:#f6f4ef}
 .drop b{display:block;font-size:16px}.drop small{color:var(--sub);font-size:13.5px}
 .drop.on{border-color:var(--red);background:var(--redbg)}
+.drop{position:relative}.drop input{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;overflow:hidden}
+.lock{display:none;color:var(--red);font-weight:700;font-size:14px;margin:0 0 8px}.card.dis .lock{display:block}
 .tray{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:4px 0 10px}
 .th{position:relative;aspect-ratio:3/4;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#eee;display:grid;place-items:center;font-size:12px;text-align:center}
 .th img{width:100%;height:100%;object-fit:cover}
@@ -132,15 +134,17 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:3px solid 
 
   <section class="card dis" id="s2">
     <h2><span class="no">2</span>撮る・入れる</h2>
+    <p class="lock">先に「1」で会社を選ぶと押せるようになります</p>
     <button type="button" class="btn red" id="camPhoto">写真を続けて撮る<small>何枚でも。間違えた写真は×で消せます</small></button>
     <button type="button" class="btn red" id="camVideo">動画で撮る<small>長くなったら一度止めて、続けて次を撮れます</small></button>
-    <label class="drop" id="drop"><b>写真・動画・PDFを選んで入れる</b><small>押して選ぶ。パソコンはここへドラッグしても入ります</small><input type="file" id="pickF" multiple accept="image/*,video/*,application/pdf" class="hide"></label>
+    <label class="drop" id="drop"><b>写真・動画・PDFを選んで入れる</b><small>押して選ぶ。パソコンはここへドラッグ＆ドロップ、またはCtrl＋Vで貼り付けても入ります</small><input type="file" id="pickF" multiple accept="image/*,video/*,application/pdf"></label>
     <div class="msg" id="m2"></div>
     <div class="tray" id="tray"></div>
   </section>
 
   <section class="card dis" id="s3">
     <h2><span class="no">3</span>未処理に保存する</h2>
+    <p class="lock">先に「1」で会社を選ぶと押せるようになります</p>
     <button type="button" class="btn red" id="save1">未処理に入れるだけ<small>仕訳は後でする</small></button>
     <button type="button" class="btn red" id="save2">未処理に入れて、続けて仕訳もする</button>
     <div class="bar hide" id="bar"><i></i></div>
@@ -150,6 +154,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:3px solid 
 
   <section class="card dis" id="s4">
     <h2><span class="no">4</span>Claudeに頼む</h2>
+    <p class="lock">先に「1」で会社を選ぶと押せるようになります</p>
     <button type="button" class="btn" id="doJ">仕訳をする<small>未処理にある分をClaudeに頼みます</small></button>
     <div class="ask hide" id="askJ"></div>
     <button type="button" class="btn" id="doI">弥生へ取り込む<small>できたCSVを1本にまとめて取り込みます</small></button>
@@ -645,7 +650,7 @@ $("#reload").onclick=async()=>{try{await loadCos()}catch(e){msg("#m1","読み込
 $("#camPhoto").onclick=()=>openCam("photo");$("#camVideo").onclick=()=>openCam("video");
 $("#shut").onclick=shutter;$("#camDone").onclick=camDone;$("#camLight").onclick=toggleLight;
 $("#pickF").onchange=e=>{addFiles(e.target.files);e.target.value=""};
-$("#drop").onclick=e=>{if(e.target.id!=="pickF")$("#pickF").click();e.preventDefault()};
+document.addEventListener("paste",e=>{const f=e.clipboardData&&e.clipboardData.files;if(f&&f.length){e.preventDefault();addFiles(f)}});
 ["dragenter","dragover"].forEach(t=>document.addEventListener(t,e=>{e.preventDefault();$("#drop").classList.add("on")}));
 ["dragleave","drop"].forEach(t=>document.addEventListener(t,e=>{e.preventDefault();if(t==="drop"||!e.relatedTarget)$("#drop").classList.remove("on")}));
 document.addEventListener("drop",e=>{if(e.dataTransfer&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files)});
