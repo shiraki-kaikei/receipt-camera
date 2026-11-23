@@ -587,17 +587,18 @@ async function save(thenJ){
 }
 
 /* ===== Claudeに頼む ===== */
+const CONN=(fs,apps)=>`【最初の準備】作業の前に、このパソコンの次のフォルダーを1回の許可でまとめてつないで（フォルダーへのアクセスを一度にまとめて求める）：${fs.join("・")}（どれも自分のOneDriveの中にある）。${apps?`画面の操作が要る${apps}も、使う許可を最初にまとめて求めること。`:""}このパソコンにないフォルダーは、つないであるMicrosoft 365（OneDrive）から開くこと。どうしてもつながらないものがあれば、作業を始める前に、何がつながらないかだけを短く聞くこと。\n`;
 const where=c=>dest.id==="def"?"":`（場所：${dest.label}${c.cat&&c.cat!=="すべて"?" ＞ "+c.cat:""} ＞ ${c.folder}）`;
 function textJ(c){
-  if(c.direct)return PRE+`\n「${dest.label}」の未処理に入れた分の弥生仕訳をして。`+VIDRULE;
-  const s=stMap[c.id];let t=PRE+`\n《${c.folder}》の未処理フォルダを処理して${where(c)}。`;
+  if(c.direct)return CONN(["＿弥生仕訳フォルダ"])+PRE+`\n「${dest.label}」の未処理に入れた分の弥生仕訳をして。`+VIDRULE;
+  const s=stMap[c.id];let t=CONN(["＿弥生仕訳フォルダ","＿秘書ボックス"])+PRE+`\n《${c.folder}》の未処理フォルダを処理して${where(c)}。`;
   if(s&&s.noIns)t+="この会社には _instructions.txt がまだないので、先に作ってから処理すること。";
   t+="\n未処理のほかに、この会社の領収書などがほかの場所に置かれていないかも探すこと。探す場所は、①この会社のフォルダーの中で未処理・処理済・出力以外の場所（会社フォルダーのすぐ下や要保管書類など）、②秘書フォルダー（OneDriveの ＿秘書ボックス。特に 01_受付 の中の、この会社の呼び名のフォルダー）、③OneDrive全体で、この会社の番号・名前・屋号が名前に入ったファイルのうち最近入ったもの。秘書ボックスの案件は秘書タスク台帳とLINE WORKS側の担当を確かめ、ほかで作業中の物には手を付けないこと。見つけた物は、処理済の物と重ならないか確かめたうえで一覧にして、仕訳に使うかどうかを私に聞くこと。使うと答えた物だけ未処理に移してから処理すること。";
   return t+VIDRULE;
 }
 function textI(c){
   const s=stMap[c.id],csv=s&&s.csv||[];
-  return PRE+"\n"+(csv.length?`《${c.folder}》の出力フォルダにある、まだ弥生に取り込んでいないCSV（${csv.join("、")}）を、同じ仕訳が重なっていないか確かめてから1本にまとめて弥生に取り込んで${where(c)}。`:`《${c.folder}》の出力フォルダにある、まだ弥生に取り込んでいないCSVを1本にまとめて弥生に取り込んで${where(c)}。`)+"取り込みが終わったら、元のCSVとまとめたCSVはそれぞれ「処理済」フォルダへ移し、拡張子の前に「_済」を付けて。";
+  return CONN(["＿弥生仕訳フォルダ"],"弥生会計27")+PRE+"\n"+(csv.length?`《${c.folder}》の出力フォルダにある、まだ弥生に取り込んでいないCSV（${csv.join("、")}）を、同じ仕訳が重なっていないか確かめてから1本にまとめて弥生に取り込んで${where(c)}。`:`《${c.folder}》の出力フォルダにある、まだ弥生に取り込んでいないCSVを1本にまとめて弥生に取り込んで${where(c)}。`)+"取り込みが終わったら、元のCSVとまとめたCSVはそれぞれ「処理済」フォルダへ移し、拡張子の前に「_済」を付けて。";
 }
 function askBox(id,text,head){
   const b=$(id);show(id,true);
@@ -605,7 +606,7 @@ function askBox(id,text,head){
   b.querySelector("a").addEventListener("click",()=>{try{navigator.clipboard.writeText(text)}catch(e){}});
   b.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
-function textA(c){return`＿監査用 の 00_現行正本一覧.md を最初に読み、そこで指定された監査の指示書（監査体制 Ver3.0 の統一規約・運用とデータ契約・audit-settings.json、共通監査基準、この会社の会社別設定など）をすべて読んでから、《${c.folder}》の監査をして${where(c)}。会社の特定、0次・一次・二次のどれか、新規か続きかは、指示書どおり監査進捗一覧・案件台帳・案件記録で判断すること。質問は指示書の決まった形でこのチャットに全部出すこと。私が答えたら、その都度回答を反映し、弥生の訂正が必要なものは指示書どおり訂正CSVを作って検証し、そのまま弥生に取り込んで訂正まで済ませること（別に頼み直さなくてよい）。取り込んだCSVは、この会社の「処理済」フォルダへ移し、拡張子の前に「_済」を付けること。`}
+function textA(c){return CONN(["＿監査用","＿弥生仕訳フォルダ","申告関係"],"弥生会計27とICS")+`＿監査用 の 00_現行正本一覧.md を最初に読み、そこで指定された監査の指示書（監査体制 Ver3.0 の統一規約・運用とデータ契約・audit-settings.json、共通監査基準、この会社の会社別設定など）をすべて読んでから、《${c.folder}》の監査をして${where(c)}。会社の特定、0次・一次・二次のどれか、新規か続きかは、指示書どおり監査進捗一覧・案件台帳・案件記録で判断すること。質問は指示書の決まった形でこのチャットに全部出すこと。私が答えたら、その都度回答を反映し、弥生の訂正が必要なものは指示書どおり訂正CSVを作って検証し、そのまま弥生に取り込んで訂正まで済ませること（別に頼み直さなくてよい）。取り込んだCSVは、この会社の「処理済」フォルダへ移し、拡張子の前に「_済」を付けること。`}
 async function doAsk(kind){
   if(kind==="a"){if(sel)askBox("#askA",textA(sel),"この会社の監査を頼みます");return}
   const c=sel;if(!c)return;const id=kind==="j"?"#askJ":"#askI";show(id,true);$(id).innerHTML="<p>未処理と出力を確認しています…</p>";
